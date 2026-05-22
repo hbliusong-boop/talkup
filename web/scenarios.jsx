@@ -1,12 +1,17 @@
 /* ─── Scenarios list ─────────────────────────────── */
 const CATEGORIES = [
-  { key:"all",   label:"全部",   count:0,  icon:null },
-  { key:"work",  label:"职场",   count:0, icon:"Briefcase"},
-  { key:"travel",label:"旅行",   count:0, icon:"Plane"  },
-  { key:"life",  label:"日常",   count:0, icon:"Coffee" },
-  { key:"hotel", label:"住宿",   count:0, icon:"Bed"    },
-  { key:"shop",  label:"购物",   count:0, icon:"Cart"   },
+  { key:"all",   label:"全部",   count:0,  icon:"📚" },
+  { key:"work",  label:"职场",   count:0, icon:"💼" },
+  { key:"travel",label:"旅行",   count:0, icon:"✈️"  },
+  { key:"life",  label:"日常",   count:0, icon:"☕" },
+  { key:"hotel", label:"住宿",   count:0, icon:"🛏️" },
+  { key:"shop",  label:"购物",   count:0, icon:"🛒" },
 ];
+
+const CAT_EMOJI = { work:"💼", travel:"✈️", life:"☕", hotel:"🛏️", shop:"🛒" };
+const CAT_BG = { work:"#7C5CFB18", travel:"#4F8EF718", life:"#FF6B4A18", hotel:"#34C75918", shop:"#FFB80018" };
+const CAT_COLOR = { work:"#7C5CFB", travel:"#4F8EF7", life:"#FF6B4A", hotel:"#34C759", shop:"#FFB800" };
+const CAT_LABEL_ZH = { work:"职场", travel:"旅行", life:"日常", hotel:"住宿", shop:"购物" };
 
 function ScenariosPage() {
   const [scenes, setScenes] = useState([]);
@@ -39,20 +44,18 @@ function ScenariosPage() {
 
   return (
     <main className="wrap" style={{padding:"56px 32px 96px"}}>
-      <PageHeader
-        eyebrow={`场景库 · ${scenes.length} 个对话`}
-        title={<>挑一个<i style={{color:"var(--green)"}}>今天</i>就用得上的。</>}
-        sub="从真实生活场景出发，每节课只有一个目标——把那段对话听懂、说顺。"
-      />
+      <div style={{marginBottom:32}}>
+        <div style={{fontSize:11, letterSpacing:"0.14em", textTransform:"uppercase", color:"var(--ink-3)", fontWeight:500, marginBottom:8}}>场景库 · {scenes.length} 个对话</div>
+        <h1 style={{fontFamily:"var(--serif)", fontSize:42, margin:0, letterSpacing:"-0.02em", lineHeight:1.1}}>挑一个<em style={{color:"var(--green)", fontStyle:"normal"}}>今天</em>就用得上的。</h1>
+        <p style={{color:"var(--ink-3)", margin:"8px 0 0", fontSize:14}}>从真实生活场景出发，每节课只有一个目标——把那段对话听懂、说顺。</p>
+      </div>
 
       {/* search */}
       <div style={{position:"relative", marginBottom:24}}>
         <input className="input" placeholder="搜场景，如「值机」「面试」"
                value={q} onChange={(e)=>setQ(e.target.value)}
                style={{width:320, paddingLeft:38}}/>
-        <span style={{position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--ink-3)"}}>
-          <Icon.Search/>
-        </span>
+        <span style={{position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--ink-3)"}}>🔍</span>
       </div>
 
       {/* category bar */}
@@ -69,7 +72,7 @@ function ScenariosPage() {
                     color: cat===c.key ? "var(--bg)" : "var(--ink-2)",
                     cursor:"pointer", transition:"all .15s"
                   }}>
-            {c.icon && React.createElement(Icon[c.icon])}
+            {c.icon}
             {c.label}
             <span style={{opacity:.5, fontFamily:"var(--mono)", fontSize:11}}>{c.count}</span>
           </button>
@@ -105,19 +108,17 @@ function ScenariosPage() {
 
 /* ── SceneCard ───────────────────────────────────────── */
 function SceneCard({ scene }) {
-  const catIcons = { work:"Briefcase", travel:"Plane", life:"Coffee", hotel:"Bed", shop:"Cart" };
-  const catColors = { work:"#7C5CFB", travel:"#4F8EF7", life:"#FF6B4A", hotel:"#34C759", shop:"#FFB800" };
-  const bgColors = { work:"#7C5CFB18", travel:"#4F8EF718", life:"#FF6B4A18", hotel:"#34C75918", shop:"#FFB80018" };
-  const bgColor = bgColors[scene.cat] || "#4F8EF718";
-  const iconColor = catColors[scene.cat] || "#4F8EF7";
+  const emoji = CAT_EMOJI[scene.cat] || "📚";
+  const bg = CAT_BG[scene.cat] || "#4F8EF718";
+  const color = CAT_COLOR[scene.cat] || "#4F8EF7";
   return (
     <a href="#" className="card" onClick={e=>{e.preventDefault(); isLoggedIn() ? navigate("detail", { id: scene.id }) : navigate("login");}}
        style={{padding:20, display:"flex", flexDirection:"column", gap:14, transition:"border-color .15s, transform .12s", cursor:"pointer"}}
        onMouseEnter={e=>e.currentTarget.style.borderColor="var(--green)"}
        onMouseLeave={e=>e.currentTarget.style.borderColor="var(--line)"}>
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-        <span style={{width:40, height:40, borderRadius:12, background:bgColor, color:iconColor, display:"grid", placeItems:"center", fontSize:20}}>
-          {React.createElement(Icon[catIcons[scene.cat] || "Plane"])}
+        <span style={{width:40, height:40, borderRadius:12, background:bg, color:color, display:"grid", placeItems:"center", fontSize:20}}>
+          {emoji}
         </span>
         {scene.level && <span className="chip" style={{fontFamily:"var(--mono)", fontSize:11}}>{scene.level}</span>}
       </div>
@@ -128,8 +129,8 @@ function SceneCard({ scene }) {
       <p style={{margin:0, color:"var(--ink-2)", fontSize:13.5, lineHeight:1.5, flex:1}}>{scene.desc}</p>
       <div className="hr"/>
       <div style={{display:"flex", justifyContent:"space-between", color:"var(--ink-3)", fontSize:12.5}}>
-        <span style={{display:"inline-flex", alignItems:"center", gap:6}}><Icon.Book/> {scene.lessons}节</span>
-        <span style={{display:"inline-flex", alignItems:"center", gap:6}}><Icon.Clock/> {scene.time}分</span>
+        <span>📖 {scene.lessons}节</span>
+        <span>⏱ {scene.time}分</span>
         <span style={{fontFamily:"var(--mono)"}}>{scene.learners || "0"}学过</span>
       </div>
     </a>
@@ -138,10 +139,8 @@ function SceneCard({ scene }) {
 
 /* ── FeaturedSceneCard ───────────────────────────── */
 function FeaturedSceneCard({ scene }) {
-  const catIcons = { work:"Briefcase", travel:"Plane", life:"Coffee", hotel:"Bed", shop:"Cart" };
-  const catColors = { work:"#7C5CFB", travel:"#4F8EF7", life:"#FF6B4A", hotel:"#34C759", shop:"#FFB800" };
-  const catLabels = { work:"职场", travel:"旅行", life:"日常", hotel:"住宿", shop:"购物" };
-  const bgColor = catColors[scene.cat] || "#4F8EF7";
+  const emoji = CAT_EMOJI[scene.cat] || "📚";
+  const color = CAT_COLOR[scene.cat] || "#4F8EF7";
   return (
     <a href="#" className="card" onClick={e=>{e.preventDefault(); isLoggedIn() ? navigate("detail", { id: scene.id }) : navigate("login");}}
        style={{padding:0, overflow:"hidden", border:"1px solid var(--line)", display:"block", marginBottom:24, cursor:"pointer"}}
@@ -151,8 +150,8 @@ function FeaturedSceneCard({ scene }) {
         <div style={{padding:"32px 36px", display:"flex", flexDirection:"column", justifyContent:"space-between"}}>
           <div>
             <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:14}}>
-              <span className="chip chip-gold">本周精选</span>
-              <span className="chip" style={{background:bgColor+"18", color:bgColor}}>{catLabels[scene.cat] || "场景"}</span>
+              <span className="chip chip-gold">⭐ 本周精选</span>
+              <span className="chip" style={{background:color+"18", color:color}}>{CAT_LABEL_ZH[scene.cat] || "场景"}</span>
             </div>
             <h2 style={{fontFamily:"var(--serif)", fontSize:38, margin:"0 0 6px", letterSpacing:"-0.02em", color:"var(--ink)"}}>{scene.t}</h2>
             <div style={{fontFamily:"var(--serif)", fontStyle:"italic", color:"var(--ink-3)", fontSize:17, marginBottom:14}}>{scene.en}</div>
@@ -160,13 +159,13 @@ function FeaturedSceneCard({ scene }) {
           </div>
           <div style={{display:"flex", gap:10, alignItems:"center", marginTop:20}}>
             <span className="chip">{scene.level}</span>
-            <span style={{fontSize:13, color:"var(--ink-3)"}}><Icon.Clock/> {scene.time}分钟</span>
-            <span style={{fontSize:13, color:"var(--ink-3)"}}><Icon.Book/> {scene.lessons}节</span>
+            <span style={{fontSize:13, color:"var(--ink-3)"}}>⏱ {scene.time}分钟</span>
+            <span style={{fontSize:13, color:"var(--ink-3)"}}>📖 {scene.lessons}节</span>
           </div>
         </div>
         <div style={{background:"linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", display:"flex", alignItems:"center", justifyContent:"center", padding:32}}>
-          <div style={{width:80, height:80, borderRadius:20, background:bgColor+"33", display:"grid", placeItems:"center", fontSize:40}}>
-            {React.createElement(Icon[catIcons[scene.cat] || "Plane"])}
+          <div style={{width:80, height:80, borderRadius:20, background:color+"33", display:"grid", placeItems:"center", fontSize:40}}>
+            {emoji}
           </div>
         </div>
       </div>
