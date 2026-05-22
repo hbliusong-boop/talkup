@@ -72,6 +72,16 @@ function DetailPage({ tweaks, setTweak, params }) {
     }).catch(() => setSceneLoading(false));
   }, [params?.id]);
 
+  // Build vocab lookup from both VOCAB_DEFS and sceneData.vocab
+  const getVocabInfo = (word) => {
+    if (VOCAB_DEFS[word]) return VOCAB_DEFS[word];
+    if (sceneData?.vocab) {
+      const found = sceneData.vocab.find(v => v.word === word);
+      if (found) return { ipa: found.ipa || '', pos: found.pos || '', zh: found.zh || '', ex: found.example || '' };
+    }
+    return null;
+  };
+
   // Speech synthesis
   const speak = useCallback((text, opts={}) => new Promise((res)=>{
     if (!("speechSynthesis" in window)) { setTimeout(res, 1200); return; }
@@ -265,13 +275,13 @@ function DetailPage({ tweaks, setTweak, params }) {
                 done={i < completedThrough}
                 playing={playMode==="all" && activeIdx===i}
                 onPlay={()=>playLine(i)}
-                onWordClick={(w, el)=>{ setOpenVocab({ word:w.toLowerCase(), x:el.offsetLeft, y:el.offsetTop, width:el.offsetWidth }); }}
+                onWordClick={(w, el)=>{ const word = w.toLowerCase(); if (getVocabInfo(word)) setOpenVocab({ word, x:el.offsetLeft, y:el.offsetTop, width:el.offsetWidth }); }}
               />
             ))}
 
             {/* vocab popover */}
-            {openVocab && VOCAB_DEFS[openVocab.word] && (
-              <VocabPopover info={VOCAB_DEFS[openVocab.word]} word={openVocab.word}
+            {openVocab && getVocabInfo(openVocab.word) && (
+              <VocabPopover info={getVocabInfo(openVocab.word)} word={openVocab.word}
                             x={openVocab.x} y={openVocab.y} width={openVocab.width}
                             onClose={()=>setOpenVocab(null)} onPlay={()=>speak(openVocab.word)}/>
             )}
