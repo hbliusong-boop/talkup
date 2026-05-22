@@ -433,10 +433,17 @@ function SidePanel({ speak, goals, phrases, vocab }) {
     "掌握本场景核心词汇",
     "能够进行基础的角色扮演对话",
   ];
-  const phrasesList = phrases.length ? phrases : [
+  const _phrasesDefault = [
     { tpl: ["Hello, ", "__"], blank: "example", use: "开场表达", ex: "Hello!", exZh: "你好！" },
     { tpl: ["Nice to ", "__", " you!"], blank: "meet", use: "初次见面", ex: "Nice to meet you!", exZh: "很高兴认识你！" },
   ];
+const phrasesList = (phrases.length ? phrases : _phrasesDefault).map(p => ({
+    tpl: p.tpl,
+    blank: p.blank,
+    use: p.use || p.function_zh || "",
+    ex: p.ex || p.example_en || "",
+    exZh: p.exZh || p.example_zh || "",
+  }));
   const vocabList = vocab.length ? vocab.map(v => [v.word, v.zh || v.ipa]) : [
     ["word", "释义"],
     ["example", "示例"],
