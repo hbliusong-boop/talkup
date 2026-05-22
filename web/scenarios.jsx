@@ -118,7 +118,7 @@ function ScenariosPage() {
 
 /* ── SceneCard ───────────────────────────────────────── */
 function SceneCard({ scene }) {
-  const catIcons = { work:"briefcase", travel:"plane", life:"coffee", hotel:"bed", shop:"cart" };
+  const catIcons = { work:"Briefcase", travel:"Plane", life:"Coffee", hotel:"Bed", shop:"Cart" };
   const catColors = { work:"#7C5CFB", travel:"#4F8EF7", life:"#FF6B4A", hotel:"#34C759", shop:"#FFB800" };
   return (
     <a href="#" className="scene-card" onClick={e=>{e.preventDefault(); isLoggedIn() ? navigate("detail", { id: scene.id }) : navigate("login");}}>
