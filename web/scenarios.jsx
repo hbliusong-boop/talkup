@@ -124,12 +124,13 @@ function SceneCard({ scene }) {
     <a href="#" className="scene-card" onClick={e=>{e.preventDefault(); isLoggedIn() ? navigate("detail", { id: scene.id }) : navigate("login");}}>
       <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:12}}>
         <span style={{
-          width:32, height:32, borderRadius:8,
-          background: catColors[scene.cat] + "22",
+          width:36, height:36, borderRadius:10,
+          background: (catColors[scene.cat] || "#4F8EF7") + "18",
           display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:16
+          color: catColors[scene.cat] || "#4F8EF7",
+          fontSize:18
         }}>
-          {(()=>{ const C=Icon[Icon[catIcons[scene.cat]||"Plane"]||"Plane"]; return null; })()}
+          {React.createElement(Icon[catIcons[scene.cat] || "Plane"])}
         </span>
         <div style={{flex:1, minWidth:0}}>
           <div style={{fontWeight:600, fontSize:15, marginBottom:2}}>{scene.t}</div>
