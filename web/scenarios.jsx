@@ -1,13 +1,12 @@
 /* ─── Scenarios list ─────────────────────────────── */
 const CATEGORIES = [
-  { key:"all",     label:"全部",   count:0,  icon:null },
-  { key:"work",    label:"职场",   count:0, icon:"briefcase"},
-  { key:"travel",  label:"旅行",   count:0, icon:"plane"  },
-  { key:"life",    label:"日常",   count:0, icon:"coffee" },
-  { key:"hotel",   label:"住宿",   count:0, icon:"bed"    },
-  { key:"shop",    label:"购物",   count:0, icon:"cart"   },
+  { key:"all",   label:"全部",   count:0,  icon:null },
+  { key:"work",  label:"职场",   count:0, icon:"Briefcase"},
+  { key:"travel",label:"旅行",   count:0, icon:"Plane"  },
+  { key:"life",  label:"日常",   count:0, icon:"Coffee" },
+  { key:"hotel", label:"住宿",   count:0, icon:"Bed"    },
+  { key:"shop",  label:"购物",   count:0, icon:"Cart"   },
 ];
-const ICON_MAP = { plane:"Plane", briefcase:"Briefcase", coffee:"Coffee", bed:"Bed", cart:"Cart", phone:"Phone" };
 
 function ScenariosPage() {
   const [scenes, setScenes] = useState([]);
@@ -18,13 +17,7 @@ function ScenariosPage() {
 
   useEffect(() => {
     API.scenarios().then(data => {
-      if (Array.isArray(data)) {
-        setScenes(data);
-        // update category counts
-        const cats = {};
-        data.forEach(s => { cats[s.cat] = (cats[s.cat] || 0) + 1; });
-        // counts updated via state if needed
-      }
+      if (Array.isArray(data)) setScenes(data);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -67,38 +60,32 @@ function ScenariosPage() {
         {cats.map(c=>(
           <button key={c.key}
                   onClick={()=>setCat(c.key)}
-                  className="btn btn-sm"
                   style={{
-                    background: cat===c.key ? "var(--ink)" : "var(--bg-2)",
-                    color: cat===c.key ? "var(--bg)" : "var(--ink-2)",
+                    display:"inline-flex", alignItems:"center", gap:6,
+                    height:36, padding:"0 14px",
+                    borderRadius:"999px", fontWeight:500, fontSize:13.5,
                     border:"1px solid " + (cat===c.key ? "var(--ink)" : "var(--line)"),
+                    background: cat===c.key ? "var(--ink)" : "transparent",
+                    color: cat===c.key ? "var(--bg)" : "var(--ink-2)",
+                    cursor:"pointer", transition:"all .15s"
                   }}>
+            {c.icon && React.createElement(Icon[c.icon])}
             {c.label}
             <span style={{opacity:.5, fontFamily:"var(--mono)", fontSize:11}}>{c.count}</span>
           </button>
         ))}
       </div>
 
-      {/* level filter */}
-      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:28, color:"var(--ink-3)", fontSize:13}}>
-        <div style={{display:"flex", gap:8, alignItems:"center"}}>
-          <span style={{fontSize:12.5}}>难度</span>
-          {["all","A1","A2","B1","B2","C1"].map(l=>(
-            <button key={l} onClick={()=>setLevel(l)}
-                    className="chip"
-                    style={{
-                      background: level===l ? "var(--green-4)" : "var(--bg-2)",
-                      color: level===l ? "var(--green)" : "var(--ink-3)",
-                      borderColor: level===l ? "color-mix(in oklab, var(--green) 22%, transparent)" : "var(--line)",
-                      cursor:"pointer", fontFamily: l==="all" ? "var(--sans)" : "var(--mono)"
-                    }}>
-              {l==="all" ? "全部" : l}
-            </button>
-          ))}
-        </div>
-        <div style={{display:"flex", gap:18}}>
-          <span>共 {filtered.length} 个场景</span>
-        </div>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12}}>
+        <span style={{fontSize:13, color:"var(--ink-3)"}}>共 {filtered.length} 个场景</span>
+        <select value={level} onChange={e=>setLevel(e.target.value)} className="input" style={{width:120, height:32, fontSize:12}}>
+          <option value="all">全部等级</option>
+          <option value="A1">A1</option>
+          <option value="A2">A2</option>
+          <option value="B1">B1</option>
+          <option value="B2">B2</option>
+          <option value="C1">C1</option>
+        </select>
       </div>
 
       {/* featured */}
@@ -107,7 +94,7 @@ function ScenariosPage() {
       )}
 
       {/* grid */}
-      <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:16}}>
+      <div style={{display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:18, marginTop: cat==="all" && q==="" && level==="all" ? 18 : 0}}>
         {filtered.filter(s => !(cat==="all" && q==="" && level==="all" && s.id===(featured||{}).id)).map(s=>(
           <SceneCard key={s.id} scene={s}/>
         ))}
@@ -120,55 +107,71 @@ function ScenariosPage() {
 function SceneCard({ scene }) {
   const catIcons = { work:"Briefcase", travel:"Plane", life:"Coffee", hotel:"Bed", shop:"Cart" };
   const catColors = { work:"#7C5CFB", travel:"#4F8EF7", life:"#FF6B4A", hotel:"#34C759", shop:"#FFB800" };
+  const bgColors = { work:"#7C5CFB18", travel:"#4F8EF718", life:"#FF6B4A18", hotel:"#34C75918", shop:"#FFB80018" };
+  const bgColor = bgColors[scene.cat] || "#4F8EF718";
+  const iconColor = catColors[scene.cat] || "#4F8EF7";
   return (
-    <a href="#" className="scene-card" onClick={e=>{e.preventDefault(); isLoggedIn() ? navigate("detail", { id: scene.id }) : navigate("login");}}>
-      <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:12}}>
-        <span style={{
-          width:36, height:36, borderRadius:10,
-          background: (catColors[scene.cat] || "#4F8EF7") + "18",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          color: catColors[scene.cat] || "#4F8EF7",
-          fontSize:18
-        }}>
+    <a href="#" className="card" onClick={e=>{e.preventDefault(); isLoggedIn() ? navigate("detail", { id: scene.id }) : navigate("login");}}
+       style={{padding:20, display:"flex", flexDirection:"column", gap:14, transition:"border-color .15s, transform .12s", cursor:"pointer"}}
+       onMouseEnter={e=>e.currentTarget.style.borderColor="var(--green)"}
+       onMouseLeave={e=>e.currentTarget.style.borderColor="var(--line)"}>
+      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+        <span style={{width:40, height:40, borderRadius:12, background:bgColor, color:iconColor, display:"grid", placeItems:"center", fontSize:20}}>
           {React.createElement(Icon[catIcons[scene.cat] || "Plane"])}
         </span>
-        <div style={{flex:1, minWidth:0}}>
-          <div style={{fontWeight:600, fontSize:15, marginBottom:2}}>{scene.t}</div>
-          <div style={{fontSize:12, color:"var(--ink-3)"}}>{scene.en}</div>
-        </div>
         {scene.level && <span className="chip" style={{fontFamily:"var(--mono)", fontSize:11}}>{scene.level}</span>}
       </div>
-      <p style={{fontSize:13, color:"var(--ink-2)", margin:"0 0 14px", lineHeight:1.5}}>{scene.desc}</p>
-      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:12, color:"var(--ink-3)"}}>
-        <span>{scene.time}分钟 · {scene.lessons}课</span>
-        <span>{scene.learners || "0"}学过</span>
+      <div>
+        <div style={{fontWeight:600, fontSize:17, marginBottom:2}}>{scene.t}</div>
+        <div style={{fontSize:12, color:"var(--ink-3)", fontStyle:"italic"}}>{scene.en}</div>
       </div>
-      {scene.progress > 0 && (
-        <div style={{marginTop:10, height:3, background:"var(--line)", borderRadius:2}}>
-          <div style={{width:scene.progress+"%", height:"100%", background:"var(--green)", borderRadius:2}}/>
-        </div>
-      )}
+      <p style={{margin:0, color:"var(--ink-2)", fontSize:13.5, lineHeight:1.5, flex:1}}>{scene.desc}</p>
+      <div className="hr"/>
+      <div style={{display:"flex", justifyContent:"space-between", color:"var(--ink-3)", fontSize:12.5}}>
+        <span style={{display:"inline-flex", alignItems:"center", gap:6}}><Icon.Book/> {scene.lessons}节</span>
+        <span style={{display:"inline-flex", alignItems:"center", gap:6}}><Icon.Clock/> {scene.time}分</span>
+        <span style={{fontFamily:"var(--mono)"}}>{scene.learners || "0"}学过</span>
+      </div>
     </a>
   );
 }
 
 /* ── FeaturedSceneCard ───────────────────────────── */
 function FeaturedSceneCard({ scene }) {
+  const catIcons = { work:"Briefcase", travel:"Plane", life:"Coffee", hotel:"Bed", shop:"Cart" };
+  const catColors = { work:"#7C5CFB", travel:"#4F8EF7", life:"#FF6B4A", hotel:"#34C759", shop:"#FFB800" };
+  const catLabels = { work:"职场", travel:"旅行", life:"日常", hotel:"住宿", shop:"购物" };
+  const bgColor = catColors[scene.cat] || "#4F8EF7";
   return (
-    <a href="#" className="scene-card featured" onClick={e=>{e.preventDefault(); isLoggedIn() ? navigate("detail", { id: scene.id }) : navigate("login");}}
-       style={{display:"block", padding:"28px 32px", marginBottom:28, background:"linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", borderRadius:16, color:"inherit", textDecoration:"none"}}>
-      <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:16}}>
-        <GreenRibbon label="精选" num={scene.cat === "work" ? "职场" : scene.cat === "travel" ? "旅行" : "日常"}/>
-        <span style={{fontFamily:"var(--mono)", fontSize:12, color:"var(--green-3)"}}>{scene.level}</span>
-      </div>
-      <h2 style={{fontSize:28, fontWeight:600, margin:"0 0 8px", color:"var(--bg)"}}>{scene.t}</h2>
-      <p style={{color:"rgba(255,255,255,0.6)", fontSize:15, margin:"0 0 20px"}}>{scene.en}</p>
-      <p style={{color:"rgba(255,255,255,0.5)", fontSize:13, margin:0, lineHeight:1.6}}>{scene.desc}</p>
-      <div style={{display:"flex", gap:24, marginTop:20, fontSize:13, color:"rgba(255,255,255,0.5)"}}>
-        <span>{scene.time}分钟</span>
-        <span>{scene.lessons}课</span>
-        <span>{scene.learners}学过</span>
+    <a href="#" className="card" onClick={e=>{e.preventDefault(); isLoggedIn() ? navigate("detail", { id: scene.id }) : navigate("login");}}
+       style={{padding:0, overflow:"hidden", border:"1px solid var(--line)", display:"block", marginBottom:24, cursor:"pointer"}}
+       onMouseEnter={e=>e.currentTarget.style.borderColor="var(--green)"}
+       onMouseLeave={e=>e.currentTarget.style.borderColor="var(--line)"}}>
+      <div style={{display:"grid", gridTemplateColumns:"1.1fr 1fr", minHeight:240}}>
+        <div style={{padding:"32px 36px", display:"flex", flexDirection:"column", justifyContent:"space-between"}}>
+          <div>
+            <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:14}}>
+              <span className="chip chip-gold">本周精选</span>
+              <span className="chip" style={{background:bgColor+"18", color:bgColor}}>{catLabels[scene.cat] || "场景"}</span>
+            </div>
+            <h2 style={{fontFamily:"var(--serif)", fontSize:38, margin:"0 0 6px", letterSpacing:"-0.02em", color:"var(--ink)"}}>{scene.t}</h2>
+            <div style={{fontFamily:"var(--serif)", fontStyle:"italic", color:"var(--ink-3)", fontSize:17, marginBottom:14}}>{scene.en}</div>
+            <p style={{maxWidth:400, color:"var(--ink-2)", fontSize:14, lineHeight:1.55}}>{scene.desc}</p>
+          </div>
+          <div style={{display:"flex", gap:10, alignItems:"center", marginTop:20}}>
+            <span className="chip">{scene.level}</span>
+            <span style={{fontSize:13, color:"var(--ink-3)"}}><Icon.Clock/> {scene.time}分钟</span>
+            <span style={{fontSize:13, color:"var(--ink-3)"}}><Icon.Book/> {scene.lessons}节</span>
+          </div>
+        </div>
+        <div style={{background:"linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", display:"flex", alignItems:"center", justifyContent:"center", padding:32}}>
+          <div style={{width:80, height:80, borderRadius:20, background:bgColor+"33", display:"grid", placeItems:"center", fontSize:40}}>
+            {React.createElement(Icon[catIcons[scene.cat] || "Plane"])}
+          </div>
+        </div>
       </div>
     </a>
   );
 }
+
+window.ScenariosPage = ScenariosPage;
