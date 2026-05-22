@@ -285,7 +285,7 @@ function DetailPage({ tweaks, setTweak, params }) {
         </div>
 
         {/* ── side panel ── */}
-        <SidePanel speak={(t)=>speak(t)}/>
+        <SidePanel speak={(t)=>speak(t)} goals={sceneData?.goals || []} phrases={sceneData?.phrases || []} vocab={sceneData?.vocab || []}/>
       </div>
     </main>
   );
@@ -416,44 +416,20 @@ function VocabPopover({ info, word, onClose, onPlay }) {
 }
 
 /* ── right side panel ── */
-function SidePanel({ speak }) {
-  const vocab = [
-    ["boarding pass","登机牌"],
-    ["check in","办理值机"],
-    ["aisle / window","靠过道 / 靠窗"],
-    ["carry-on","随身行李"],
-    ["overweight","超重的"],
-    ["gate","登机口"],
+function SidePanel({ speak, goals, phrases, vocab }) {
+  const goalsList = goals.length ? goals : [
+    "听懂本场景的核心词汇和常用表达",
+    "能够用简单句子回应对方",
+    "掌握本场景核心词汇",
+    "能够进行基础的角色扮演对话",
   ];
-  const patterns = [
-    {
-      tpl:    ["May I see your ", "__", ", please?"],
-      blank:  "passport / ticket / ID",
-      use:    "礼貌地请对方出示证件",
-      ex:     "May I see your boarding pass, please?",
-      exZh:   "可以让我看一下您的登机牌吗？",
-    },
-    {
-      tpl:    ["I'd like ", "__", ", please."],
-      blank:  "a window seat / two tickets",
-      use:    "礼貌地表达自己的要求",
-      ex:     "I'd like an aisle seat, please.",
-      exZh:   "我想要一个靠过道的座位。",
-    },
-    {
-      tpl:    ["Could you ", "__", ", please?"],
-      blank:  "place it on the scale / repeat that",
-      use:    "比 Can you 更客气的请求",
-      ex:     "Could you speak a bit slower, please?",
-      exZh:   "可以请您说慢一点吗？",
-    },
-    {
-      tpl:    ["Are you ", "__", "?"],
-      blank:  "checking bags / flying alone",
-      use:    "工作人员常用的确认提问",
-      ex:     "Are you checking any bags today?",
-      exZh:   "今天有要托运的行李吗？",
-    },
+  const phrasesList = phrases.length ? phrases : [
+    { tpl: ["Hello, ", "__"], blank: "example", use: "开场表达", ex: "Hello!", exZh: "你好！" },
+    { tpl: ["Nice to ", "__", " you!"], blank: "meet", use: "初次见面", ex: "Nice to meet you!", exZh: "很高兴认识你！" },
+  ];
+  const vocabList = vocab.length ? vocab.map(v => [v.word, v.zh || v.ipa]) : [
+    ["word", "释义"],
+    ["example", "示例"],
   ];
   return (
     <aside style={{display:"flex", flexDirection:"column", gap:18, position:"sticky", top:88, alignSelf:"flex-start"}}>
@@ -461,12 +437,7 @@ function SidePanel({ speak }) {
       <div className="card" style={{padding:18}}>
         <div className="eyebrow" style={{fontSize:11, marginBottom:12}}>这节课在练什么</div>
         <ul style={{listStyle:"none", padding:0, margin:0, display:"flex", flexDirection:"column", gap:10, fontSize:13.5, color:"var(--ink-2)"}}>
-          {[
-            "听懂值机柜台 5 个标准提问",
-            "用 1 句话回应行李 / 座位偏好",
-            "认识 8 个高频登机相关词",
-            "把整段对话连贯说下来",
-          ].map((t,i)=>(
+          {goalsList.map((t,i)=>(
             <li key={i} style={{display:"flex", gap:10}}>
               <span style={{flex:"0 0 auto", width:18, height:18, borderRadius:"50%", background:"var(--green-4)", color:"var(--green)", display:"grid", placeItems:"center", fontSize:11, fontFamily:"var(--mono)"}}>{i+1}</span>
               <span>{t}</span>
@@ -478,11 +449,11 @@ function SidePanel({ speak }) {
       {/* sentence patterns */}
       <div className="card" style={{padding:18}}>
         <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14}}>
-          <div className="eyebrow" style={{fontSize:11}}>常用句式 · {patterns.length}</div>
+          <div className="eyebrow" style={{fontSize:11}}>常用句式 · {phrasesList.length}</div>
           <a href="#" style={{fontSize:12, color:"var(--green)"}}>全部</a>
         </div>
         <div style={{display:"flex", flexDirection:"column", gap:14}}>
-          {patterns.map((p,i)=>(
+          {phrasesList.map((p,i)=>(
             <div key={i} style={{
               padding:"12px 14px", borderRadius:12,
               background:"var(--bg)", border:"1px dashed var(--line)"
@@ -526,11 +497,11 @@ function SidePanel({ speak }) {
       {/* vocab list */}
       <div className="card" style={{padding:18}}>
         <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12}}>
-          <div className="eyebrow" style={{fontSize:11}}>本课生词 · {vocab.length}</div>
+          <div className="eyebrow" style={{fontSize:11}}>本课生词 · {vocabList.length}</div>
           <a href="#" style={{fontSize:12, color:"var(--green)"}}>全部</a>
         </div>
         <div style={{display:"flex", flexDirection:"column", gap:2}}>
-          {vocab.map(([en,zh])=>(
+          {vocabList.map(([en,zh])=>(
             <div key={en} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderTop:"1px dashed var(--line)"}}>
               <div>
                 <div style={{fontFamily:"var(--serif)", fontSize:16, color:"var(--ink)"}}>{en}</div>
