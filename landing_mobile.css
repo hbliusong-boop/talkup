@@ -1,0 +1,13 @@
+
+/* Landing page mobile */
+@media (max-width: 768px) {
+  [style*="1.05fr 1fr"] { grid-template-columns: 1fr !important; gap: 32px !important; }
+  [style*="1.05fr 1fr"] > div:last-child { display: none; }
+  [style*="1.2fr 1fr"] { grid-template-columns: 1fr !important; gap: 24px !important; }
+}
+@media (max-width: 480px) {
+  [style*="repeat(4, 1fr)"] { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 360px) {
+  [style*="repeat(4, 1fr)"] { grid-template-columns: 1fr !important; }
+}

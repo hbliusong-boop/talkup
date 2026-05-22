@@ -1,0 +1,52 @@
+/* ── Mobile Fixes v2 ─────────────────────── */
+@media (max-width: 768px) {
+  /* Profile */
+  main.wrap[style*="56px 32px 96px"] { padding: 24px 16px 60px !important; }
+  [style*="fontSize:44"] { font-size: 32px !important; }
+  [style*="fontSize:36"] { font-size: 26px !important; }
+  [style*="fontSize:60"] { font-size: 40px !important; }
+  [style*="padding:24px 26px"] { padding: 16px !important; }
+
+  /* Calendar */
+  [style*="56px 32px 96px"][class*="wrap"] { padding: 24px 16px 60px !important; }
+  [style*="fontSize:54"] { font-size: 36px !important; }
+  [style*="fontSize:32"] { font-size: 24px !important; }
+  [style*="fontSize:24"] { font-size: 20px !important; }
+
+  /* Auth page - hide left panel, full width form */
+  [style*="grid-template-columns: 1fr 1.1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  [style*="grid-template-columns: 1fr 1.1fr"] aside {
+    display: none !important;
+  }
+  [style*="grid-template-columns: 1fr 1.1fr"] section {
+    padding: 32px 20px !important;
+  }
+
+  /* Detail page - stack layout */
+  [style*="grid-template-columns: 1fr 320px"] {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  [style*="32px 32px 80px"] { padding: 16px 16px 60px !important; }
+  [style*="fontSize:42"] { font-size: 28px !important; }
+  [style*="fontSize:28"] { font-size: 22px !important; }
+  [style*="fontSize:24"] { font-size: 18px !important; }
+
+  /* Scenarios - search full width */
+  [style*="width:320"] { width: 100% !important; }
+  [style*="padding-left:38"] { padding-left: 38px !important; }
+}
+
+@media (max-width: 480px) {
+  /* Shared small screen fixes */
+  [style*="fontSize:44"] { font-size: 28px !important; }
+  [style*="fontSize:42"] { font-size: 24px !important; }
+  [style*="fontSize:54"] { font-size: 32px !important; }
+  [style*="padding:56px"] { padding: 32px 16px !important; }
+  [style*="padding:56px 56px"] { padding: 32px 16px !important; }
+  [style*="padding:56px 32px"] { padding: 24px 16px !important; }
+  .card { padding: 16px !important; }
+  .btn-lg { height: 44px !important; padding: 0 16px !important; }
+}

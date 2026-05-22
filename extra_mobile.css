@@ -1,0 +1,8 @@
+
+/* ── Nav mobile menu ────────────────────────── */
+.nav-mobile-btn { display: none; }
+@media (max-width: 768px) {
+  .nav-inner > nav.nav-links { display: none; }
+  .nav-mobile-btn { display: flex !important; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: var(--bg-2); border: none; cursor: pointer; font-size: 18px; color: var(--ink); }
+  header.nav { position: sticky; top: 0; z-index: 100; background: var(--bg); }
+}
