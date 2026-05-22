@@ -51,7 +51,7 @@ const VOCAB_DEFS = {
   "pleasant":     { ipa:"/ˈplez.ənt/",  pos:"adj.", zh:"愉快的", ex:"Have a pleasant flight." },
 };
 
-function DetailPage({ tweaks, setTweak }) {
+function DetailPage({ tweaks, setTweak, params }) {
   const bilingual = tweaks.dialogMode !== "english-only";
   const [activeIdx, setActiveIdx] = useState(-1);
   const [activeWord, setActiveWord] = useState(-1); // word index within line
@@ -60,6 +60,17 @@ function DetailPage({ tweaks, setTweak }) {
   const [voice, setVoice] = useState("US-Female");
   const [openVocab, setOpenVocab] = useState(null); // {word, lineEl}
   const playRef = useRef({ stop:false });
+  const [sceneData, setSceneData] = useState(null);
+  const [sceneLoading, setSceneLoading] = useState(true);
+
+  // Load scenario from API
+  useEffect(() => {
+    if (!params?.id) { setSceneLoading(false); return; }
+    API.scenario(params.id).then(data => {
+      setSceneData(data);
+      setSceneLoading(false);
+    }).catch(() => setSceneLoading(false));
+  }, [params?.id]);
 
   // Speech synthesis
   const speak = useCallback((text, opts={}) => new Promise((res)=>{
@@ -91,7 +102,7 @@ function DetailPage({ tweaks, setTweak }) {
     setActiveIdx(i);
     setActiveWord(-1);
     setPlayMode("single");
-    const line = DIALOG[i];
+    const line = dialogues[i];
     const words = line.en.split(/\s+/);
     // word index lookup by char index
     const offsets = [];
@@ -117,10 +128,10 @@ function DetailPage({ tweaks, setTweak }) {
     }
     playRef.current.stop = false;
     setPlayMode("all");
-    for (let i=0; i<DIALOG.length; i++) {
+    for (let i=0; i<dialogues.length; i++) {
       if (playRef.current.stop) break;
       setActiveIdx(i); setActiveWord(-1);
-      const line = DIALOG[i];
+      const line = dialogues[i];
       const words = line.en.split(/\s+/);
       const offsets = []; let acc=0;
       for (const w of words) { offsets.push(acc); acc += w.length + 1; }
@@ -138,12 +149,21 @@ function DetailPage({ tweaks, setTweak }) {
 
   // overall progress is 4/9 completed for visual demo + active line
   const completedThrough = 4;
+  const dialogues = sceneData?.dialogues || DIALOG;
   const progressPct = playMode==="all"
-    ? Math.round(((activeIdx+1)/DIALOG.length)*100)
-    : Math.round((completedThrough/DIALOG.length)*100);
+    ? Math.round(((activeIdx+1)/dialogues.length)*100)
+    : Math.round((completedThrough/dialogues.length)*100);
 
   // cleanup speech on unmount
   useEffect(()=>()=>{ window.speechSynthesis?.cancel(); }, []);
+
+  if (sceneLoading) return <div style={{padding:80, textAlign:"center", color:"var(--ink-3)"}}>加载中...</div>;
+
+  // Category labels
+  const catLabels = { work:"职场", travel:"旅行", life:"日常", hotel:"住宿", shop:"购物" };
+  const catLabel = catLabels[sceneData?.cat] || sceneData?.cat || "场景";
+  const sceneTitle = sceneData?.t || "机场值机";
+  const sceneEn = sceneData?.en || "Airport check-in";
 
   return (
     <main style={{padding:"32px 32px 80px"}}>
@@ -154,9 +174,9 @@ function DetailPage({ tweaks, setTweak }) {
           <div style={{display:"flex", alignItems:"center", gap:14, color:"var(--ink-3)", fontSize:13, marginBottom:18}}>
             <a href="#" onClick={(e)=>{e.preventDefault(); navigate("scenarios");}} style={{color:"var(--ink-3)"}}>场景库</a>
             <span>›</span>
-            <span>旅行</span>
+            <span>{catLabel}</span>
             <span>›</span>
-            <span style={{color:"var(--ink)"}}>机场值机</span>
+            <span style={{color:"var(--ink)"}}>{sceneTitle}</span>
           </div>
 
           {/* lesson header */}
@@ -167,18 +187,18 @@ function DetailPage({ tweaks, setTweak }) {
                   <Icon.Plane/>
                 </span>
                 <div>
-                  <div style={{fontSize:11, color:"var(--ink-3)", letterSpacing:0.05, textTransform:"uppercase", fontWeight:500, marginBottom:2}}>Lesson 02 / 06 · 听说练习</div>
-                  <h1 style={{fontFamily:"var(--serif)", fontSize:42, margin:0, letterSpacing:"-0.02em", lineHeight:1.1}}>Airport check-in</h1>
+                  <div className="eyebrow" style={{fontSize:11, marginBottom:2}}>{sceneTitle} · 听说练习</div>
+                  <h1 className="display" style={{fontSize:42, margin:0}}>{sceneEn}</h1>
                 </div>
               </div>
-              <p style={{margin:"4px 0 0", color:"var(--ink-3)", maxWidth:560, fontSize:14.5, lineHeight:1.55}}>
-                把行李递上去、说要靠窗——这段对话是出差和旅行的第一道关。
+              <p style={{margin:"4px 0 0", color:"var(--ink-3)", maxWidth:560}}>
+                {sceneData?.desc || ''}
               </p>
             </div>
             <div style={{display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8}}>
-              <span style={{fontFamily:"var(--mono)", fontSize:12, color:"var(--ink-3)"}}>{progressPct}% · {DIALOG.length} 句</span>
+              <span style={{fontFamily:"var(--mono)", fontSize:12, color:"var(--ink-3)"}}>{progressPct}% · {dialogues.length} 句</span>
               <div style={{width:180, height:6, background:"var(--bg-3)", borderRadius:99, overflow:"hidden"}}>
-                <div style={{width:progressPct+"%", height:"100%", background:"var(--green)", transition:"width .3s", borderRadius:99}}/>
+                <div style={{width:progressPct+"%", height:"100%", background:"var(--green)", transition:"width .3s"}}/>
               </div>
             </div>
           </div>
@@ -234,7 +254,7 @@ function DetailPage({ tweaks, setTweak }) {
 
           {/* dialogue stream */}
           <div style={{position:"relative", display:"flex", flexDirection:"column", gap:14}} onClick={()=>setOpenVocab(null)}>
-            {DIALOG.map((line, i) => (
+            {dialogues.map((line, i) => (
               <DialogTurn
                 key={i}
                 line={line}
@@ -245,7 +265,7 @@ function DetailPage({ tweaks, setTweak }) {
                 done={i < completedThrough}
                 playing={playMode==="all" && activeIdx===i}
                 onPlay={()=>playLine(i)}
-                onWordClick={(w, el)=>{ setOpenVocab({ word: w.toLowerCase(), x:el.offsetLeft, y:el.offsetTop, width:el.offsetWidth }); }}
+                onWordClick={(w, el)=>{ setOpenVocab({ word:w.toLowerCase(), x:el.offsetLeft, y:el.offsetTop, width:el.offsetWidth }); }}
               />
             ))}
 
@@ -260,7 +280,7 @@ function DetailPage({ tweaks, setTweak }) {
           {/* bottom nav */}
           <div style={{display:"flex", justifyContent:"space-between", marginTop:36, paddingTop:24, borderTop:"1px solid var(--line)"}}>
             <button className="btn btn-outline">← Lesson 01 · 安检</button>
-            <button className="btn btn-primary" onClick={()=>navigate("scenarios")}>完成本节，下一课 <Icon.Arrow/></button>
+            <button className="btn btn-primary">完成本节，下一课 <Icon.Arrow/></button>
           </div>
         </div>
 
@@ -278,148 +298,260 @@ function DialogTurn({ line, idx, active, activeWord, bilingual, done, playing, o
   return (
     <div
       data-comment-anchor={`dialog-turn-${idx}`}
-      onClick={()=>{ if (!playing) onPlay(); }}
       style={{
-        display:"flex", gap:14, padding:"16px 20px", borderRadius:16,
-        background: active ? "color-mix(in oklab, var(--green) 8%, var(--bg-2))" : "var(--bg-2)",
-        border: "1px solid " + (active ? "color-mix(in oklab, var(--green) 30%, var(--line))" : "var(--line)"),
-        cursor: playing ? "default" : "pointer",
-        transition: "all 0.15s",
-        opacity: done && !active ? 0.72 : 1,
-      }}
-    >
-      {/* speaker badge */}
-      <div style={{flex:"0 0 auto", width:36, height:36, borderRadius:99, background: isYou ? "var(--green-4)" : "var(--ink)", color: isYou ? "var(--green)" : "var(--bg)", display:"grid", placeItems:"center", fontSize:13, fontWeight:600, alignSelf:"flex-start"}}>
-        {isYou ? "你" : "AI"}
+        display:"flex", gap:14,
+        flexDirection: isYou ? "row-reverse" : "row",
+        alignItems:"flex-start",
+      }}>
+      {/* avatar */}
+      <div style={{flex:"0 0 auto", width:40, height:40, borderRadius:"50%",
+                   background: isYou ? "var(--ink)" : "var(--green-4)",
+                   color: isYou ? "var(--bg)" : "var(--green)",
+                   display:"grid", placeItems:"center",
+                   fontFamily:"var(--serif)", fontSize:16,
+                   marginTop:6,
+                   border: active ? `2px solid var(--green)` : "2px solid transparent"
+                  }}>
+        {isYou ? "You" : "A"}
       </div>
-      <div style={{flex:1, minWidth:0}}>
-        <div style={{display:"flex", justifyContent:"space-between", marginBottom:8}}>
-          <span style={{fontSize:12, color:"var(--ink-3)", fontWeight:500}}>
-            {isYou ? "你的回答" : "AI 助手"}
+
+      {/* bubble */}
+      <div style={{
+        position:"relative", maxWidth:"82%",
+        padding:"16px 20px", borderRadius:18,
+        background: active ? "var(--green-4)" : "var(--bg-2)",
+        border: "1px solid " + (active ? "color-mix(in oklab, var(--green) 25%, transparent)" : "var(--line)"),
+        boxShadow: active ? "0 4px 18px -8px color-mix(in oklab, var(--green) 60%, transparent)" : "none",
+        transition:"background .2s, border-color .2s",
+      }} onClick={(e)=>e.stopPropagation()}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, marginBottom:6}}>
+          <span style={{fontSize:11.5, color:"var(--ink-3)", fontWeight:600, letterSpacing:0.08, textTransform:"uppercase"}}>
+            {line.sp} · {String(idx+1).padStart(2,"0")}
           </span>
-          {done && <span title="已掌握" style={{color:"var(--green)"}}><Icon.Check/></span>}
+          <div style={{display:"flex", gap:6, alignItems:"center"}}>
+            {done && <span title="已掌握" style={{color:"var(--green)"}}><Icon.Check/></span>}
+            <button className="btn btn-ghost btn-sm" onClick={onPlay} style={{height:30, width:30, padding:0, justifyContent:"center", color: active ? "var(--green)" : "var(--ink-3)"}}>
+              {playing ? <Icon.Pause/> : <Icon.Play/>}
+            </button>
+          </div>
         </div>
-        {/* English */}
-        <div style={{fontSize:15.5, lineHeight:1.55, marginBottom: bilingual ? 6 : 0, color:"var(--ink)"}}>
-          {words.map((w, wi) => (
-            <span key={wi}
-              style={{
-                background: activeWord===wi ? "color-mix(in oklab, var(--green) 25%, transparent)" : "transparent",
-                borderRadius:2, padding:"0 1px", cursor:"pointer",
-                transition:"background .1s"
-              }}
-              onClick={(e) => { e.stopPropagation(); onWordClick(w, e.target); }}
-            >{w}{" "}</span>
-          ))}
-        </div>
+
+        {/* English with word-level highlight + click */}
+        <p style={{margin:0, fontFamily:"var(--serif)", fontSize:24, lineHeight:1.4, color:"var(--ink)", letterSpacing:"-0.01em"}}>
+          {words.map((w,i)=>{
+            const clean = w.replace(/[.,?!]/g,"").toLowerCase();
+            const isVocab = line.vocab.some(v => clean===v || v.includes(clean) || clean.includes(v.split(/[\s-]/)[0]));
+            const isActiveW = active && activeWord===i;
+            return (
+              <React.Fragment key={i}>
+                <span
+                  onClick={(e)=>{
+                    e.stopPropagation();
+                    if (isVocab) onWordClick(clean, e.currentTarget);
+                  }}
+                  style={{
+                    background: isActiveW ? "color-mix(in oklab, var(--green) 28%, transparent)" : "transparent",
+                    borderRadius:4, padding:"1px 2px",
+                    transition:"background .12s",
+                    textDecoration: isVocab ? "underline" : "none",
+                    textDecorationStyle:"dotted",
+                    textDecorationColor: "var(--green)",
+                    textUnderlineOffset:6,
+                    cursor: isVocab ? "pointer" : "default",
+                  }}>{w}</span>
+                {i<words.length-1 && " "}
+              </React.Fragment>
+            );
+          })}
+        </p>
+
         {/* Chinese */}
         {bilingual && (
-          <div style={{fontSize:13.5, color:"var(--ink-3)", lineHeight:1.5}}>{line.zh}</div>
-        )}
-        {/* vocab tags */}
-        {line.vocab && line.vocab.length > 0 && (
-          <div style={{display:"flex", gap:6, flexWrap:"wrap", marginTop:10}}>
-            {line.vocab.map(w => (
-              <span key={w} style={{fontSize:11.5, padding:"2px 9px", borderRadius:999, background:"var(--green-4)", color:"var(--green)", fontFamily:"var(--mono)"}}>{w}</span>
-            ))}
-          </div>
+          <p style={{margin:"8px 0 0", fontSize:14, color:"var(--ink-3)"}}>{line.zh}</p>
         )}
       </div>
-      {/* play indicator */}
-      {playing && (
-        <div style={{flex:"0 0 auto", alignSelf:"center"}}>
-          <span style={{display:"flex", gap:2}}>
-            {[0,1,2].map(i => <span key={i} style={{width:4, height:16, background:"var(--green)", borderRadius:2, animation:"wave 0.6s ease-in-out infinite", animationDelay:`${i*0.1}s`}}/>)}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
 
-/* ── Side panel ── */
-function SidePanel({ speak }) {
-  const [activeTab, setActiveTab] = useState("vocab");
-  const vocabList = useMemo(() => {
-    const seen = new Set();
-    const list = [];
-    DIALOG.forEach(line => {
-      (line.vocab || []).forEach(w => {
-        if (!seen.has(w)) { seen.add(w); list.push(w); }
-      });
-    });
-    return list;
-  }, []);
-
+/* ── vocab popover ── */
+function VocabPopover({ info, word, onClose, onPlay }) {
   return (
-    <div style={{display:"flex", flexDirection:"column", gap:0}}>
-      <div style={{display:"flex", borderBottom:"1px solid var(--line)", marginBottom:16}}>
-        {[["vocab","词汇"],["tips","提示"]].map(([k,l]) => (
-          <button key={k} onClick={()=>setActiveTab(k)}
-            style={{flex:1, padding:"10px 0", background:"none", border:"none", borderBottom:"2px solid " + (activeTab===k ? "var(--green)" : "transparent"), color: activeTab===k ? "var(--ink)" : "var(--ink-3)", fontSize:13.5, cursor:"pointer", fontWeight:500}}>
-            {l} {k==="vocab" ? `(${vocabList.length})` : ""}
-          </button>
-        ))}
+    <div style={{
+      position:"fixed", inset:0, zIndex:60, pointerEvents:"none",
+      display:"grid", placeItems:"center",
+    }}>
+      <div style={{
+        pointerEvents:"auto",
+        background:"var(--bg-2)", border:"1px solid var(--line)",
+        borderRadius:16, padding:"18px 20px", width:340, boxShadow:"var(--shadow-lg)",
+      }}>
+        <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between"}}>
+          <div>
+            <div style={{fontFamily:"var(--serif)", fontSize:28, color:"var(--ink)"}}>{word}</div>
+            <div style={{display:"flex", gap:10, alignItems:"center", marginTop:2}}>
+              <span style={{fontFamily:"var(--mono)", fontSize:13, color:"var(--ink-3)"}}>{info.ipa}</span>
+              <button className="btn btn-ghost btn-sm" onClick={onPlay} style={{height:26, padding:"0 8px", color:"var(--green)"}}>
+                <Icon.Speaker/> 听
+              </button>
+            </div>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose} style={{height:30, width:30, padding:0, justifyContent:"center"}}><Icon.X/></button>
+        </div>
+        <div className="hr" style={{margin:"14px 0"}}/>
+        <div style={{display:"flex", gap:8, alignItems:"baseline"}}>
+          <span className="chip" style={{height:22, fontStyle:"italic"}}>{info.pos}</span>
+          <span style={{fontSize:15, color:"var(--ink)"}}>{info.zh}</span>
+        </div>
+        <p style={{margin:"14px 0 0", fontFamily:"var(--serif)", fontSize:15, color:"var(--ink-2)", fontStyle:"italic", lineHeight:1.5}}>
+          "{info.ex}"
+        </p>
+        <div style={{display:"flex", gap:8, marginTop:16}}>
+          <button className="btn btn-outline btn-sm grow" style={{justifyContent:"center"}}>加入生词本</button>
+          <button className="btn btn-primary btn-sm grow" style={{justifyContent:"center"}}>抽认卡复习</button>
+        </div>
       </div>
-      {activeTab === "vocab" && (
-        <div style={{display:"flex", flexDirection:"column", gap:8}}>
-          {vocabList.map(w => (
-            <div key={w} style={{padding:"12px 14px", background:"var(--bg-2)", borderRadius:12, border:"1px solid var(--line)"}}>
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4}}>
-                <span style={{fontFamily:"var(--mono)", fontSize:14, fontWeight:600}}>{w}</span>
-                <button onClick={()=>speak(w)} style={{background:"none", border:"none", cursor:"pointer", color:"var(--green)", padding:2}}><Icon.Speaker/></button>
+    </div>
+  );
+}
+
+/* ── right side panel ── */
+function SidePanel({ speak }) {
+  const vocab = [
+    ["boarding pass","登机牌"],
+    ["check in","办理值机"],
+    ["aisle / window","靠过道 / 靠窗"],
+    ["carry-on","随身行李"],
+    ["overweight","超重的"],
+    ["gate","登机口"],
+  ];
+  const patterns = [
+    {
+      tpl:    ["May I see your ", "__", ", please?"],
+      blank:  "passport / ticket / ID",
+      use:    "礼貌地请对方出示证件",
+      ex:     "May I see your boarding pass, please?",
+      exZh:   "可以让我看一下您的登机牌吗？",
+    },
+    {
+      tpl:    ["I'd like ", "__", ", please."],
+      blank:  "a window seat / two tickets",
+      use:    "礼貌地表达自己的要求",
+      ex:     "I'd like an aisle seat, please.",
+      exZh:   "我想要一个靠过道的座位。",
+    },
+    {
+      tpl:    ["Could you ", "__", ", please?"],
+      blank:  "place it on the scale / repeat that",
+      use:    "比 Can you 更客气的请求",
+      ex:     "Could you speak a bit slower, please?",
+      exZh:   "可以请您说慢一点吗？",
+    },
+    {
+      tpl:    ["Are you ", "__", "?"],
+      blank:  "checking bags / flying alone",
+      use:    "工作人员常用的确认提问",
+      ex:     "Are you checking any bags today?",
+      exZh:   "今天有要托运的行李吗？",
+    },
+  ];
+  return (
+    <aside style={{display:"flex", flexDirection:"column", gap:18, position:"sticky", top:88, alignSelf:"flex-start"}}>
+      {/* scene context card */}
+      <div className="card" style={{padding:18}}>
+        <div className="eyebrow" style={{fontSize:11, marginBottom:12}}>这节课在练什么</div>
+        <ul style={{listStyle:"none", padding:0, margin:0, display:"flex", flexDirection:"column", gap:10, fontSize:13.5, color:"var(--ink-2)"}}>
+          {[
+            "听懂值机柜台 5 个标准提问",
+            "用 1 句话回应行李 / 座位偏好",
+            "认识 8 个高频登机相关词",
+            "把整段对话连贯说下来",
+          ].map((t,i)=>(
+            <li key={i} style={{display:"flex", gap:10}}>
+              <span style={{flex:"0 0 auto", width:18, height:18, borderRadius:"50%", background:"var(--green-4)", color:"var(--green)", display:"grid", placeItems:"center", fontSize:11, fontFamily:"var(--mono)"}}>{i+1}</span>
+              <span>{t}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* sentence patterns */}
+      <div className="card" style={{padding:18}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14}}>
+          <div className="eyebrow" style={{fontSize:11}}>常用句式 · {patterns.length}</div>
+          <a href="#" style={{fontSize:12, color:"var(--green)"}}>全部</a>
+        </div>
+        <div style={{display:"flex", flexDirection:"column", gap:14}}>
+          {patterns.map((p,i)=>(
+            <div key={i} style={{
+              padding:"12px 14px", borderRadius:12,
+              background:"var(--bg)", border:"1px dashed var(--line)"
+            }}>
+              <div style={{
+                fontFamily:"var(--serif)", fontSize:16.5, lineHeight:1.4,
+                color:"var(--ink)", display:"flex", flexWrap:"wrap", alignItems:"baseline", gap:"0 4px"
+              }}>
+                {p.tpl.map((seg, k) => seg==="__" ? (
+                  <span key={k} style={{
+                    display:"inline-block",
+                    padding:"1px 8px",
+                    fontFamily:"var(--sans)",
+                    fontSize:12.5,
+                    color:"var(--green)",
+                    background:"var(--green-4)",
+                    border:"1px dashed color-mix(in oklab, var(--green) 35%, transparent)",
+                    borderRadius:6,
+                    fontStyle:"italic",
+                  }}>{p.blank}</span>
+                ) : <span key={k}>{seg}</span>)}
               </div>
-              {VOCAB_DEFS[w] && (
-                <>
-                  <div style={{fontSize:12, color:"var(--ink-3)", marginBottom:2}}>{VOCAB_DEFS[w].ipa} · {VOCAB_DEFS[w].pos}</div>
-                  <div style={{fontSize:13, color:"var(--ink)"}}>{VOCAB_DEFS[w].zh}</div>
-                </>
-              )}
+              <div style={{fontSize:11.5, color:"var(--ink-4)", marginTop:6, letterSpacing:0.05}}>
+                {p.use}
+              </div>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginTop:8, paddingTop:8, borderTop:"1px dashed var(--line)"}}>
+                <div style={{flex:1, minWidth:0}}>
+                  <div style={{fontSize:13, color:"var(--ink-2)", fontStyle:"italic"}}>"{p.ex}"</div>
+                  <div style={{fontSize:11.5, color:"var(--ink-3)", marginTop:2}}>{p.exZh}</div>
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={()=>speak(p.ex)}
+                        style={{width:28, height:28, padding:0, justifyContent:"center", color:"var(--ink-3)", flex:"0 0 auto"}}>
+                  <Icon.Speaker/>
+                </button>
+              </div>
             </div>
           ))}
         </div>
-      )}
-      {activeTab === "tips" && (
-        <div style={{padding:"16px", background:"var(--bg-2)", borderRadius:12, border:"1px solid var(--line)", fontSize:13.5, color:"var(--ink-2)", lineHeight:1.6}}>
-          <p style={{margin:"0 0 12px"}}>💡 <strong>练习技巧</strong></p>
-          <ul style={{margin:0, paddingLeft:18}}>
-            <li>先听 AI 说的内容，理解意思</li>
-            <li>点击某一句跟读，模仿发音语调</li>
-            <li>点击单词查看详细解释</li>
-            <li>点击「播放全部」连续听完整对话</li>
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
+      </div>
 
-/* ── Vocab popover ── */
-function VocabPopover({ info, word, x, y, width, onClose, onPlay }) {
-  const ref = useRef(null);
-  useEffect(() => { ref.current?.focus(); }, []);
-  return (
-    <div ref={ref} tabIndex={-1}
-      style={{
-        position:"absolute", left:x, top:y+30, width:280,
-        background:"var(--bg)", border:"1px solid var(--line)",
-        borderRadius:14, padding:"14px 16px",
-        boxShadow:"0 8px 32px rgba(0,0,0,0.12)",
-        zIndex:200, outline:"none"
-      }}
-      onClick={e => e.stopPropagation()}
-    >
-      <div style={{display:"flex", justifyContent:"space-between", marginBottom:8}}>
-        <span style={{fontFamily:"var(--mono)", fontSize:16, fontWeight:700}}>{word}</span>
-        <div style={{display:"flex", gap:8}}>
-          <button onClick={onPlay} style={{background:"none", border:"none", cursor:"pointer", color:"var(--green)"}}><Icon.Speaker/></button>
-          <button onClick={onClose} style={{background:"none", border:"none", cursor:"pointer", color:"var(--ink-3)"}}>✕</button>
+      {/* vocab list */}
+      <div className="card" style={{padding:18}}>
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12}}>
+          <div className="eyebrow" style={{fontSize:11}}>本课生词 · {vocab.length}</div>
+          <a href="#" style={{fontSize:12, color:"var(--green)"}}>全部</a>
+        </div>
+        <div style={{display:"flex", flexDirection:"column", gap:2}}>
+          {vocab.map(([en,zh])=>(
+            <div key={en} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", borderTop:"1px dashed var(--line)"}}>
+              <div>
+                <div style={{fontFamily:"var(--serif)", fontSize:16, color:"var(--ink)"}}>{en}</div>
+                <div style={{fontSize:12, color:"var(--ink-3)", marginTop:1}}>{zh}</div>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={()=>speak(en)} style={{width:30, height:30, padding:0, justifyContent:"center", color:"var(--ink-3)"}}>
+                <Icon.Speaker/>
+              </button>
+            </div>
+          ))}
         </div>
       </div>
-      <div style={{fontSize:12, color:"var(--ink-3)", marginBottom:6}}>{info.ipa} · {info.pos}</div>
-      <div style={{fontSize:14, color:"var(--ink)", marginBottom:8}}>{info.zh}</div>
-      {info.ex && <div style={{fontSize:12.5, color:"var(--ink-3)", fontStyle:"italic"}}>"{info.ex}"</div>}
-    </div>
+
+      {/* tips */}
+      <div style={{padding:18, borderRadius:20, background:"var(--green)", color:"#FFFEF6"}}>
+        <div style={{fontSize:11, letterSpacing:0.12, textTransform:"uppercase", opacity:.7, marginBottom:8}}>地道说法</div>
+        <div style={{fontFamily:"var(--serif)", fontSize:18, lineHeight:1.45}}>
+          地勤问 "Window or aisle?"——直接回答 "Window, please." 就够礼貌了，无需完整句。
+        </div>
+      </div>
+    </aside>
   );
 }
 
